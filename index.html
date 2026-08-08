@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NoseEditor</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f0f0f; --panel:#212121; --panel2:#181818; --hover:#272727;
+    --line:#303030; --line2:#3f3f3f;
+    --red:#ff0000; --redDark:#cc0000;
+    --text:#f1f1f1; --mute:#aaaaaa; --dim:#717171;
+    --ok:#2ba640;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Roboto,system-ui,Arial,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 18px 70px;}
+
+  /* topo */
+  .brand{display:flex;align-items:center;gap:11px;margin-bottom:3px;}
+  .play{width:40px;height:28px;background:var(--red);border-radius:7px;position:relative;flex-shrink:0;}
+  .play::after{content:"";position:absolute;left:15px;top:8px;border-left:11px solid #fff;
+    border-top:6px solid transparent;border-bottom:6px solid transparent;}
+  h1{margin:0;font-size:27px;font-weight:900;letter-spacing:-1px;}
+  .tag{color:var(--mute);font-size:13.5px;margin:0 0 22px 51px;}
+
+  /* abas */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:22px;overflow-x:auto;}
+  .tab{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--mute);
+    font-family:inherit;font-weight:500;font-size:14px;padding:13px 18px;cursor:pointer;white-space:nowrap;}
+  .tab:hover:not(.locked){color:var(--text);}
+  .tab.on{color:var(--text);border-bottom-color:var(--red);font-weight:700;}
+  .tab.locked{color:var(--dim);cursor:not-allowed;}
+
+  /* blocos */
+  .card{background:var(--panel);border-radius:12px;padding:17px;margin-bottom:13px;}
+  .card.flat{background:var(--panel2);border:1px solid var(--line);}
+  .lbl{display:block;font-size:12px;color:var(--mute);margin-bottom:8px;}
+  .mini{font-family:'Roboto Mono',monospace;font-size:10.5px;letter-spacing:1.3px;
+    text-transform:uppercase;color:var(--red);font-weight:700;margin-bottom:4px;}
+  textarea,input{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);
+    border-radius:9px;padding:11px 13px;font-family:inherit;font-size:14px;line-height:1.5;}
+  textarea{resize:vertical;min-height:110px;}
+  textarea:focus,input:focus{outline:none;border-color:var(--red);}
+
+  button{cursor:pointer;font-family:inherit;border:none;border-radius:20px;}
+  .go{width:100%;background:var(--red);color:#fff;font-weight:700;font-size:15px;padding:13px;}
+  .go:hover:not(:disabled){background:var(--redDark);}
+  .go:disabled{background:var(--hover);color:var(--dim);cursor:wait;}
+  .ghost{background:var(--hover);color:var(--text);font-weight:500;font-size:13.5px;padding:10px 16px;}
+  .ghost:hover{background:var(--line2);}
+  .pill{display:flex;gap:6px;background:var(--panel2);border-radius:20px;padding:4px;margin-bottom:15px;}
+  .pill button{flex:1;background:transparent;color:var(--mute);font-weight:500;font-size:13.5px;padding:9px;}
+  .pill button.on{background:var(--text);color:var(--bg);font-weight:700;}
+
+  .row{display:flex;gap:8px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+
+  .err{background:rgba(255,0,0,.1);border:1px solid var(--red);color:#ffb3b3;
+    border-radius:9px;padding:12px 14px;font-size:13.5px;margin-bottom:14px;}
+  .empty{text-align:center;color:var(--dim);padding:34px 12px;font-size:14px;}
+  .empty b{display:block;color:var(--mute);font-size:16px;font-weight:700;margin-bottom:5px;}
+
+  /* pautas */
+  .heat{display:flex;gap:3px;flex-shrink:0;}
+  .seg{width:7px;height:19px;border-radius:2px;background:var(--line2);}
+  .pauta-top{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
+  .pauta-nome{font-size:19px;font-weight:900;line-height:1.15;margin:0;flex:1;}
+  .gancho{font-size:15.5px;line-height:1.45;font-weight:500;border-left:3px solid var(--red);padding-left:11px;}
+  ol.tit{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;}
+  ol.tit li{background:var(--bg);border-radius:7px;padding:8px 11px;font-size:13.5px;}
+  ol.tit b{color:var(--red);font-family:'Roboto Mono',monospace;margin-right:8px;}
+  .blk{margin-top:12px;}
+  .txt{font-size:13.5px;line-height:1.5;color:var(--text);margin:0;}
+  .txt.mut{color:var(--mute);}
+
+  /* storyboard */
+  .scene{background:var(--panel);border-radius:12px;overflow:hidden;margin-bottom:13px;}
+  .scene-hd{background:var(--panel2);padding:10px 16px;display:flex;justify-content:space-between;
+    align-items:center;border-bottom:1px solid var(--line);}
+  .scene-n{font-weight:900;font-size:14.5px;}
+  .badge{font-size:11px;background:var(--red);color:#fff;padding:3px 10px;border-radius:20px;font-weight:700;}
+  .quote{font-style:italic;color:var(--mute);font-size:13.5px;border-left:3px solid var(--line2);
+    padding-left:11px;margin-bottom:14px;}
+  .prompt{margin-top:8px;background:var(--bg);border:1px solid var(--line2);border-radius:9px;padding:11px 13px;}
+  .mono{font-family:'Roboto Mono',monospace;font-size:12px;line-height:1.5;word-break:break-word;}
+  .thumb{width:72px;height:72px;object-fit:cover;border-radius:7px;}
+  .sep{text-align:center;color:var(--dim);font-size:11px;letter-spacing:1.2px;
+    text-transform:uppercase;margin:0 0 13px;}
+  .hint{font-size:11.5px;color:var(--dim);margin-top:8px;line-height:1.45;}
+  .use{background:var(--hover);color:var(--text);font-weight:700;font-size:12.5px;padding:8px 14px;margin-top:13px;}
+  .use:hover{background:var(--red);color:#fff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <div class="play"></div>
+    <h1>NoseEditor</h1>
+  </div>
+  <p class="tag">Da pauta ao storyboard: descubra o assunto, escreva o roteiro, monte cada cena.</p>
+
+  <div class="tabs">
+    <button class="tab on" id="t1" onclick="setTab(1)">Pauta</button>
+    <button class="tab" id="t2" onclick="setTab(2)">Estilo do canal</button>
+    <button class="tab locked" id="t3" onclick="setTab(3)">Storyboard</button>
+  </div>
+
+  <div id="err" class="err" style="display:none"></div>
+
+  <!-- ══ 1. PAUTA ══ -->
+  <div id="p1">
+    <div class="card">
+      <div class="pill">
+        <button id="mAuto" class="on" onclick="setModo('auto')">Buscar automático</button>
+        <button id="mColar" onclick="setModo('colar')">Colar tópicos</button>
+      </div>
+      <label class="lbl">Estilo do seu canal</label>
+      <textarea id="estilo" style="min-height:75px;"></textarea>
+      <div id="boxTopicos" style="display:none;margin-top:14px;">
+        <label class="lbl">Tópicos que estão bombando (1 por linha)</label>
+        <textarea id="topicos" style="min-height:95px;" placeholder="treta fulano vs ciclano&#10;meme do momento&#10;polêmica da semana"></textarea>
+      </div>
+      <button class="go" id="btnPauta" style="margin-top:15px;" onclick="gerarPautas()">Buscar tendências agora</button>
+      <div class="hint">O modo automático pesquisa na web o que está viralizando no Brasil. Para treta fresca de X/TikTok que a busca não pega, use "Colar tópicos".</div>
+    </div>
+    <div id="pautas"></div>
+    <div id="emptyPauta" class="empty"><b>Radar limpo</b>Aperte buscar e eu trago o que está pegando fogo agora.</div>
+  </div>
+
+  <!-- ══ 2. ESTILO ══ -->
+  <div id="p2" style="display:none">
+    <div class="card flat">
+      <div class="mini">Analisar pelo link do canal</div>
+      <div class="row" style="margin-top:9px;">
+        <input id="canalUrl" placeholder="https://youtube.com/@seucanal" style="flex:1;" />
+        <button class="ghost" id="btnLink" style="white-space:nowrap;" onclick="analisarLink()">Analisar</button>
+      </div>
+      <div class="hint">Lê as thumbnails e os dados reais dos vídeos recentes do canal.</div>
+    </div>
+
+    <div class="sep">ou descreva manualmente</div>
+
+    <div class="card">
+      <label class="lbl">Referências: edição, ritmo, cores, tipografia — o que faz o canal parecer o canal.</label>
+      <textarea id="notas" placeholder="Ex.: cortes rápidos com zoom punch, paleta escura com destaque neon, motion graphics minimalistas, fonte pesada nos títulos..."></textarea>
+      <div class="row" style="justify-content:space-between;align-items:center;margin-top:13px;">
+        <span class="lbl" style="margin:0;">Thumbnails, prints, frames (até 6)</span>
+        <button class="ghost" onclick="document.getElementById('fIn').click()">+ Imagens</button>
+        <input id="fIn" type="file" accept="image/*" multiple style="display:none" onchange="addImgs(event)" />
+      </div>
+      <div id="thumbs" class="row" style="flex-wrap:wrap;margin-top:11px;"></div>
+      <button class="go" id="btnManual" style="margin-top:15px;" onclick="analisarManual()">Analisar estilo do canal</button>
+    </div>
+
+    <div class="row" style="gap:8px;">
+      <button class="ghost" style="flex:1;" onclick="document.getElementById('impIn').click()">Importar perfil</button>
+      <input id="impIn" type="file" accept="application/json" style="display:none" onchange="importarPerfil(event)" />
+      <button class="ghost" id="btnExpPerfil" style="flex:1;display:none;" onclick="exportarPerfil()">Exportar perfil</button>
+    </div>
+
+    <div id="perfilBox" class="card flat" style="display:none;margin-top:14px;">
+      <div class="mini" style="color:var(--ok);">Perfil ativo</div>
+      <div id="perfilCampos" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- ══ 3. STORYBOARD ══ -->
+  <div id="p3" style="display:none">
+    <div id="semPerfil" class="empty" style="display:none;"><b>Falta o estilo do canal</b>Defina o perfil na aba "Estilo do canal" primeiro.</div>
+    <div id="boxGerar">
+      <div class="card">
+        <label class="lbl">Cole o roteiro do vídeo (ou um trecho). As cenas se acumulam abaixo.</label>
+        <textarea id="roteiro" style="min-height:150px;" placeholder="Cole aqui o roteiro do vídeo..."></textarea>
+        <button class="go" id="btnSb" style="margin-top:14px;" onclick="gerarStoryboard()">Gerar storyboard</button>
+      </div>
+      <div class="row" style="gap:8px;margin-bottom:18px;">
+        <button class="ghost" id="btnExpSb" style="flex:1;display:none;" onclick="exportarStoryboard()">Exportar .md</button>
+        <button class="ghost" id="btnLimpar" style="flex:1;display:none;" onclick="limparCenas()">Limpar cenas</button>
+      </div>
+      <div id="cenas"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══ Config ═══════════════════════════════════════════════════════════
+var FN_CANAL = "/.netlify/functions/analisar-canal";
+var FN_PAUTAS = "/.netlify/functions/pautas";
+var FN_SB = "/.netlify/functions/storyboard";
+
+var ESTILO_PADRAO = "Canal brasileiro de comentário e reação. Tom informal, jovem, com humor e ironia. Foco em memes, tretas, polêmicas da internet, notícias virais e gente passando vergonha. Vídeos curtos e longos, muito corte e ritmo.";
+
+var st = { tab:1, modo:"auto", perfil:null, imagens:[], pautas:[], cenas:[] };
+
+// ═══ Helpers ══════════════════════════════════════════════════════════
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function erro(m){ var e=document.getElementById("err");
+  if(!m){e.style.display="none";return;} e.style.display="block"; e.textContent=m;
+  window.scrollTo({top:0,behavior:"smooth"}); }
+function el(id){ return document.getElementById(id); }
+
+function setTab(n){
+  if(n===3 && !st.perfil) return;
+  st.tab=n;
+  [1,2,3].forEach(function(i){
+    el("t"+i).className = "tab"+(i===n?" on":"")+((i===3&&!st.perfil)?" locked":"");
+    el("p"+i).style.display = i===n?"block":"none";
+  });
+  if(n===3){
+    el("semPerfil").style.display = st.perfil?"none":"block";
+    el("boxGerar").style.display = st.perfil?"block":"none";
+  }
+}
+function destravar(){ el("t3").className="tab"; }
+
+function campo(rot,val){
+  if(!val || (Array.isArray(val)&&!val.length)) return "";
+  var v = Array.isArray(val)?val.join(" · "):val;
+  return '<div class="blk"><div class="mini">'+esc(rot)+'</div><p class="txt">'+esc(v)+'</p></div>';
+}
+
+// ═══ 1. PAUTA ═════════════════════════════════════════════════════════
+el("estilo").value = ESTILO_PADRAO;
+
+function setModo(m){
+  st.modo=m;
+  el("mAuto").className = m==="auto"?"on":"";
+  el("mColar").className = m==="colar"?"on":"";
+  el("boxTopicos").style.display = m==="colar"?"block":"none";
+  el("btnPauta").textContent = m==="auto"?"Buscar tendências agora":"Gerar ideias";
+}
+
+function gerarPautas(){
+  erro(""); var b=el("btnPauta");
+  var estilo=el("estilo").value.trim();
+  var topicos=el("topicos").value.trim();
+  if(st.modo==="colar" && !topicos){ erro("Cole pelo menos um tópico para eu trabalhar em cima."); return; }
+  b.disabled=true; b.textContent = st.modo==="auto"?"Vasculhando a internet...":"Montando as pautas...";
+  el("emptyPauta").style.display="none";
+  fetch(FN_PAUTAS,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({modo:st.modo,estilo:estilo,topicos:topicos})})
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
+  .then(function(x){
+    if(!x.ok) throw new Error(x.d.erro||"Falha ao gerar pautas.");
+    st.pautas=x.d.pautas; renderPautas();
+  })
+  .catch(function(e){ erro(e.message||"Não consegui montar as pautas."); el("emptyPauta").style.display="block"; })
+  .then(function(){ b.disabled=false; setModo(st.modo); });
+}
+
+function renderPautas(){
+  var c=el("pautas"); c.innerHTML="";
+  var cores=["#ffb242","#ff9a2e","#ff7a2c","#ff5a36","#ff0000"];
+  st.pautas.forEach(function(p,idx){
+    var n=Math.max(1,Math.min(5,Number(p.calor)||1));
+    var segs=""; for(var i=0;i<5;i++){ segs+='<span class="seg" style="'+(i<n?"background:"+cores[n-1]:"")+'"></span>'; }
+    var tits=""; (p.titulos||[]).forEach(function(t,i){ tits+='<li><b>'+(i+1)+'</b>'+esc(t)+'</li>'; });
+    var d=document.createElement("div"); d.className="card";
+    d.innerHTML=
+      '<div class="pauta-top"><div class="heat" title="Calor '+n+'/5">'+segs+'</div>'+
+      '<h2 class="pauta-nome">'+esc(p.assunto)+'</h2></div>'+
+      (p.porque?'<p class="txt mut">'+esc(p.porque)+'</p>':"")+
+      (p.gancho?'<div class="blk"><div class="mini">Gancho (0–3s)</div><div class="gancho">'+esc(p.gancho)+'</div></div>':"")+
+      (tits?'<div class="blk"><div class="mini">Títulos</div><ol class="tit">'+tits+'</ol></div>':"")+
+      campo("Thumbnail",p.thumbnail)+campo("Ângulo",p.angulo)+
+      '<button class="use" onclick="usarPauta('+idx+')">Usar esta pauta no roteiro →</button>';
+    c.appendChild(d);
+  });
+}
+
+function usarPauta(i){
+  var p=st.pautas[i];
+  var base = "["+(p.assunto||"")+"]\n\n"+
+    (p.gancho?"GANCHO (0-3s): "+p.gancho+"\n\n":"")+
+    (p.angulo?"ÂNGULO: "+p.angulo+"\n\n":"")+
+    "— escreva o roteiro do vídeo aqui abaixo —\n\n";
+  var atual = el("roteiro").value;
+  el("roteiro").value = atual ? atual+"\n\n"+base : base;
+  if(!st.perfil){ setTab(2); erro("Pauta guardada no roteiro. Defina o estilo do canal para liberar o storyboard."); }
+  else { setTab(3); el("roteiro").focus(); }
+}
+
+// ═══ 2. ESTILO ════════════════════════════════════════════════════════
+function b64(file){
+  return new Promise(function(res,rej){ var r=new FileReader();
+    r.onload=function(){res(r.result.split(",")[1]);}; r.onerror=function(){rej(new Error("erro"));};
+    r.readAsDataURL(file); });
+}
+function addImgs(e){
+  var fs=Array.prototype.slice.call(e.target.files||[]).slice(0,6);
+  var ch=Promise.resolve();
+  fs.forEach(function(f){ ch=ch.then(function(){
+    if(st.imagens.length>=6) return;
+    return b64(f).then(function(d){ st.imagens.push({media:f.type,data:d}); });
+  }); });
+  ch.then(function(){ e.target.value=""; renderThumbs(); });
+}
+function renderThumbs(){
+  var c=el("thumbs"); c.innerHTML="";
+  st.imagens.forEach(function(im,i){
+    var w=document.createElement("div"); w.style.position="relative";
+    w.innerHTML='<img class="thumb" src="data:'+im.media+';base64,'+im.data+'" />'+
+      '<button onclick="delImg('+i+')" style="position:absolute;top:-5px;right:-5px;width:20px;height:20px;'+
+      'border-radius:50%;background:var(--red);color:#fff;font-size:12px;line-height:1;padding:0;">&times;</button>';
+    c.appendChild(w);
+  });
+}
+function delImg(i){ st.imagens.splice(i,1); renderThumbs(); }
+
+function analisarLink(){
+  erro(""); var b=el("btnLink");
+  var url=el("canalUrl").value.trim(); if(!url) return;
+  b.disabled=true; b.textContent="Lendo...";
+  fetch(FN_CANAL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:url})})
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
+  .then(function(x){
+    if(!x.ok) throw new Error(x.d.erro||"Falha na análise por link.");
+    st.perfil=x.d.perfil; renderPerfil(); destravar(); setTab(3);
+  })
+  .catch(function(e){ erro(e.message||"Não consegui analisar o canal pelo link."); })
+  .then(function(){ b.disabled=false; b.textContent="Analisar"; });
+}
+
+function analisarManual(){
+  erro(""); var b=el("btnManual");
+  var notas=el("notas").value.trim();
+  if(!notas && !st.imagens.length){ erro("Escreva as referências ou envie ao menos uma imagem."); return; }
+  b.disabled=true; b.textContent="Analisando o estilo...";
+  fetch(FN_CANAL,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({notas:notas,imagens:st.imagens})})
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
+  .then(function(x){
+    if(!x.ok) throw new Error(x.d.erro||"Falha ao montar o perfil.");
+    st.perfil=x.d.perfil; renderPerfil(); destravar(); setTab(3);
+  })
+  .catch(function(e){ erro(e.message||"Não consegui montar o perfil."); })
+  .then(function(){ b.disabled=false; b.textContent="Analisar estilo do canal"; });
+}
+
+function renderPerfil(){
+  var p=st.perfil; if(!p) return;
+  el("perfilBox").style.display="block";
+  el("btnExpPerfil").style.display="block";
+  var h='<div class="grid2">'+
+    campo("Estilo visual",p.estiloVisual)+campo("Edição",p.tipoEdicao)+
+    campo("Ritmo dos cortes",p.ritmoCortes)+campo("Tipografia",p.tipografia)+
+    campo("Paleta",p.paletaCores)+campo("Iluminação",p.iluminacao)+
+    campo("Enquadramentos",p.enquadramentos)+campo("Movimentos de câmera",p.movimentosCamera)+
+    campo("Transições",p.transicoes)+campo("Animações",p.animacoes)+
+    campo("Ilustrações",p.ilustracoes)+campo("Elementos gráficos",p.elementosGraficos)+
+    campo("Efeitos sonoros",p.efeitosSonoros)+campo("Emoção",p.emocao)+
+  '</div>'+campo("Linguagem visual",p.linguagemVisual)+campo("Resumo",p.resumo);
+  el("perfilCampos").innerHTML=h;
+}
+function exportarPerfil(){
+  var b=new Blob([JSON.stringify(st.perfil,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="perfil-do-canal.json"; a.click();
+}
+function importarPerfil(e){
+  var f=e.target.files&&e.target.files[0]; if(!f) return;
+  f.text().then(function(t){ st.perfil=JSON.parse(t); renderPerfil(); destravar(); setTab(3); })
+  .catch(function(){ erro("Arquivo de perfil inválido."); });
+  e.target.value="";
+}
+
+// ═══ 3. STORYBOARD ════════════════════════════════════════════════════
+function gerarStoryboard(){
+  erro(""); var b=el("btnSb");
+  var rot=el("roteiro").value.trim(); if(!rot){ erro("Cole o roteiro do vídeo."); return; }
+  b.disabled=true; b.textContent="Dirigindo as cenas...";
+  var ctx=st.cenas.slice(-2).map(function(s){return s.objetivo;}).join(" | ");
+  fetch(FN_SB,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({perfil:st.perfil,roteiro:rot,contexto:ctx})})
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
+  .then(function(x){
+    if(!x.ok) throw new Error(x.d.erro||"Falha ao gerar o storyboard.");
+    st.cenas=st.cenas.concat(x.d.cenas); renderCenas();
+  })
+  .catch(function(e){ erro(e.message||"Não consegui gerar o storyboard."); })
+  .then(function(){ b.disabled=false; b.textContent=st.cenas.length?"Gerar mais cenas":"Gerar storyboard"; });
+}
+
+function renderCenas(){
+  var c=el("cenas"); c.innerHTML="";
+  st.cenas.forEach(function(s,i){
+    var g=(s.elementosGraficos||[]).join(" · "), sx=(s.sfx||[]).join(" · ");
+    var d=document.createElement("div"); d.className="scene";
+    d.innerHTML=
+      '<div class="scene-hd"><span class="scene-n">Cena '+(i+1)+'</span>'+
+      '<span class="badge">'+esc(s.tipoIlustracao)+'</span></div>'+
+      '<div style="padding:16px;">'+
+        '<div class="quote">'+esc(s.texto)+'</div>'+
+        '<div class="grid2">'+campo("Objetivo da cena",s.objetivo)+campo("Música",s.musica)+'</div>'+
+        campo("Descrição visual",s.descricaoVisual)+
+        '<div class="grid2">'+campo("Movimentos de câmera",s.movimentosCamera)+campo("Animações",s.animacoes)+'</div>'+
+        campo("Edição / timing",s.edicao)+
+        '<div class="grid2">'+campo("Elementos gráficos",g)+campo("SFX",sx)+'</div>'+
+        '<div class="prompt"><div class="mini">Prompt para IA de imagem</div>'+
+        '<p class="txt mono">'+esc(s.promptIA)+'</p></div>'+
+      '</div>';
+    c.appendChild(d);
+  });
+  var tem = st.cenas.length>0;
+  el("btnExpSb").style.display = tem?"block":"none";
+  el("btnLimpar").style.display = tem?"block":"none";
+  el("btnSb").textContent = tem?"Gerar mais cenas":"Gerar storyboard";
+}
+function limparCenas(){ st.cenas=[]; renderCenas(); }
+
+function exportarStoryboard(){
+  var md="# Storyboard — NoseEditor\n\n"+st.cenas.map(function(s,i){
+    var g=(s.elementosGraficos||[]).join(", "), sx=(s.sfx||[]).join(", ");
+    return "## Cena "+(i+1)+"\n**Roteiro:** "+s.texto+"\n\n**Objetivo:** "+s.objetivo+
+      "\n\n**Descrição visual:** "+s.descricaoVisual+"\n\n**Tipo de ilustração:** "+s.tipoIlustracao+
+      "\n\n**Câmera:** "+s.movimentosCamera+"\n\n**Animações:** "+s.animacoes+
+      "\n\n**Edição:** "+s.edicao+"\n\n**Elementos gráficos:** "+g+"\n\n**SFX:** "+sx+
+      "\n\n**Música:** "+s.musica+"\n\n**Prompt IA:**\n> "+s.promptIA;
+  }).join("\n\n---\n\n");
+  var b=new Blob([md],{type:"text/markdown"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="storyboard.md"; a.click();
+}
+</script>
+</body>
+</html>
